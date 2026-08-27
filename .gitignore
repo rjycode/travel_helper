@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# 课程其他项目（不属于 travel-data）
+/atguigu/
+/customer-service-frontend/
+/ecommerce-service-backend/
+/docker/
