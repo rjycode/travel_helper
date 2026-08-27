@@ -31,8 +31,8 @@ def list_city_areas(
     """
     params: list[object] = []
     if keyword:
-        sql += " AND area_name LIKE %s"
-        params.append(f"%{keyword}%")
+        sql += " AND (area_name LIKE %s OR area_full_name LIKE %s)"
+        params.extend([f"%{keyword}%", f"%{keyword}%"])
     sql += " ORDER BY id ASC LIMIT %s"
     params.append(limit)
     rows = fetch_all(sql, tuple(params))

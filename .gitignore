@@ -17,7 +17,6 @@ wheels/
 node_modules/
 
 # 课程其他项目（不属于 travel-data）
-/atguigu/
 /customer-service-frontend/
 /ecommerce-service-backend/
 /docker/

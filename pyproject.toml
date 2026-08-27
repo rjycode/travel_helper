@@ -18,4 +18,12 @@ dependencies = [
     "rich>=14.2.0",
     "uvicorn>=0.34.0",
     "tzdata",
+    # 智能客服（atguigu）运行时依赖
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "pydantic-settings>=2.6.0",
+    "pyyaml>=6.0.2",
+    "aiomysql>=0.2.0",
+    "jinja2>=3.1.0",
+    "langchain>=0.3.0",
 ]
