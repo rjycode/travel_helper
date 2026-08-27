@@ -7,7 +7,7 @@ from atguigu.knowledge.handler import KnowledgeHandler
 from atguigu.plan.planner import TurnPlanner
 from atguigu.plan.turn_plan import TurnPlan, ClarifyReason
 from atguigu.plan.validator import TurnPlanValidator
-from atguigu.task.commands.command import Command, SetSlotsCommand
+from atguigu.task.commands.command import Command, SetSlotsCommand, StartFlowCommand
 from atguigu.task.flows.flows import FlowList
 from atguigu.task.flows.steps import CollectFlowStep
 from atguigu.task.handler import TaskHandler
@@ -154,7 +154,7 @@ class DialogueEngine:
 
         #2 判断command # 情况3：流程继续推进下一步
         if command:
-            return await self.task_handler.handle(commands=[command],dialogue_state=dialogue_state)
+            return await self.task_handler.handle(commands=command,dialogue_state=dialogue_state)
 
         if dialogue_state.active_task is not None:
             return await self.task_handler.handle(commands=[],dialogue_state=dialogue_state)
@@ -166,7 +166,7 @@ class DialogueEngine:
     def _try_build_set_slots_command(self,
                                      object: FocusedObject,
                                      dialogue_state: DialogueState,
-                                     flow_list: FlowList) -> Command | None:
+                                     flow_list: FlowList) -> list[Command] | Command | None:
 
         """
         职责：两种卡片类型的槽位（订单类型的槽位 商品类型的槽位）
@@ -184,6 +184,28 @@ class DialogueEngine:
             if self._is_can_set_slots_command(slot_name="product_id",state=dialogue_state,flow_list=flow_list):
                 return SetSlotsCommand(command="set_slots",slots={"product_id": object.id})
             return None
+
+        elif object.type == "flight":
+            # 机票卡片：启动机票查询流程，并回填出发/到达城市
+            attrs = object.attributes or {}
+            commands: list[Command] = [StartFlowCommand(command="start_flow", flow="flight_search")]
+            slots = {
+                "departure_city": attrs.get("departure_city"),
+                "arrival_city": attrs.get("arrival_city"),
+            }
+            slots = {k: v for k, v in slots.items() if v}
+            if slots:
+                commands.append(SetSlotsCommand(command="set_slots", slots=slots))
+            return commands
+
+        elif object.type == "hotel":
+            # 酒店卡片：启动酒店查询流程，并回填城市
+            attrs = object.attributes or {}
+            commands = [StartFlowCommand(command="start_flow", flow="hotel_search")]
+            if attrs.get("hotel_city"):
+                commands.append(SetSlotsCommand(command="set_slots",
+                                                slots={"hotel_city": attrs.get("hotel_city")}))
+            return commands
 
         else:
             return None
