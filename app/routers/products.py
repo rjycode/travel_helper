@@ -781,7 +781,7 @@ def get_flight_detail(
         raise not_found("航班不存在")
     cabins = fetch_all(
         """
-        SELECT cabin_class_code, sale_price_amount, currency_code, available_inventory, status_code
+        SELECT cabin_class_code, id, sale_price_amount, currency_code, available_inventory, status_code
         FROM flight_cabin_inventory
         WHERE flight_departure_id = %s AND status_code = 'active'
         ORDER BY sale_price_amount ASC, cabin_class_code ASC
@@ -802,6 +802,7 @@ def get_flight_detail(
         "cabins": [
             {
                 "cabinClassCode": row["cabin_class_code"],
+                "cabinId": int(row["id"]),
                 "salePriceAmount": float(row["sale_price_amount"]),
                 "currencyCode": row["currency_code"],
                 "availableInventory": int(row["available_inventory"]),
@@ -994,7 +995,7 @@ def get_train_detail(
         raise not_found("车次不存在")
     seats = fetch_all(
         """
-        SELECT seat_class_code, sale_price_amount, currency_code, available_inventory, status_code
+        SELECT seat_class_code, id, sale_price_amount, currency_code, available_inventory, status_code
         FROM train_seat_inventory
         WHERE train_departure_id = %s AND status_code = 'active'
         ORDER BY sale_price_amount ASC, seat_class_code ASC
@@ -1013,6 +1014,7 @@ def get_train_detail(
         "seats": [
             {
                 "seatClassCode": row["seat_class_code"],
+                "seatId": int(row["id"]),
                 "salePriceAmount": float(row["sale_price_amount"]),
                 "currencyCode": row["currency_code"],
                 "availableInventory": int(row["available_inventory"]),
@@ -1185,7 +1187,7 @@ def get_bus_detail(
         raise not_found("班次不存在")
     seats = fetch_all(
         """
-        SELECT seat_class_code, sale_price_amount, currency_code, available_inventory, status_code
+        SELECT seat_class_code, id, sale_price_amount, currency_code, available_inventory, status_code
         FROM bus_seat_inventory
         WHERE bus_departure_id = %s AND status_code = 'active'
         """,
@@ -1203,6 +1205,7 @@ def get_bus_detail(
         "seats": [
             {
                 "seatClassCode": row["seat_class_code"],
+                "seatId": int(row["id"]),
                 "salePriceAmount": float(row["sale_price_amount"]),
                 "currencyCode": row["currency_code"],
                 "availableInventory": int(row["available_inventory"]),

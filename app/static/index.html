@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>旅游平台 · 数据演示台</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="app" v-cloak>
+    <!-- 顶部导航 -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">✈</span>
+        <span class="brand-name">旅游数据演示台</span>
+        <span class="brand-sub">Travel Platform Demo</span>
+      </div>
+      <nav class="nav">
+        <button v-for="t in tabs" :key="t.key" class="nav-btn"
+                :class="{active: tab === t.key}" @click="tab = t.key">
+          {{ t.label }}
+        </button>
+      </nav>
+      <div class="user-box">
+        <select v-model="userId" @change="onUserSwitch" class="user-select" title="切换演示用户">
+          <option v-for="u in demoUsers" :key="u.userId" :value="u.userId">
+            #{{ u.userId }} {{ u.nickname }}
+          </option>
+        </select>
+        <span class="user-badge">{{ userId }}</span>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- ============ 商品页 ============ -->
+      <section v-if="tab === 'products'" class="page">
+        <div class="prod-tabs">
+          <button v-for="p in productTabs" :key="p.key" class="prod-tab"
+                  :class="{active: prodTab === p.key}" @click="switchProdTab(p.key)">
+            {{ p.label }}
+          </button>
+        </div>
+
+        <!-- 搜索条件 -->
+        <div class="search-bar">
+          <template v-if="prodTab === 'hotel'">
+            <label>城市 <select v-model="hotelQ.areaId">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>入住 <input type="date" v-model="hotelQ.checkIn"></label>
+            <label>离店 <input type="date" v-model="hotelQ.checkOut"></label>
+            <label>星级
+              <select v-model="hotelQ.stars">
+                <option value="">不限</option><option value="5">五星</option>
+                <option value="4">四星</option><option value="3">三星</option>
+              </select>
+            </label>
+            <label>关键字 <input v-model="hotelQ.keyword" placeholder="酒店名"></label>
+            <button class="btn primary" @click="searchHotels">搜索酒店</button>
+          </template>
+
+          <template v-else-if="prodTab === 'scenic'">
+            <label>城市 <select v-model="scenicQ.areaId">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>游玩日期 <input type="date" v-model="scenicQ.travelDate"></label>
+            <label>等级
+              <select v-model="scenicQ.ratings">
+                <option value="">不限</option><option value="5A">5A</option>
+                <option value="4A">4A</option><option value="3A">3A</option>
+              </select>
+            </label>
+            <label>关键字 <input v-model="scenicQ.keyword" placeholder="景点名"></label>
+            <button class="btn primary" @click="searchScenics">搜索景点</button>
+          </template>
+
+          <template v-else-if="prodTab === 'flight'">
+            <label>出发城市 <select v-model="flightQ.from">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>到达城市 <select v-model="flightQ.to">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>出发日期 <input type="date" v-model="flightQ.date"></label>
+            <label>舱位
+              <select v-model="flightQ.cabin">
+                <option value="">不限</option><option value="economy">经济舱</option>
+                <option value="business">商务舱</option>
+              </select>
+            </label>
+            <button class="btn primary" @click="searchFlights">搜索航班</button>
+          </template>
+
+          <template v-else-if="prodTab === 'train'">
+            <label>出发城市 <select v-model="trainQ.from">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>到达城市 <select v-model="trainQ.to">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>出发日期 <input type="date" v-model="trainQ.date"></label>
+            <label>席别
+              <select v-model="trainQ.seat">
+                <option value="">不限</option><option value="second_class">二等座</option>
+                <option value="first_class">一等座</option><option value="business">商务座</option>
+              </select>
+            </label>
+            <button class="btn primary" @click="searchTrains">搜索车次</button>
+          </template>
+
+          <template v-else-if="prodTab === 'bus'">
+            <label>出发城市 <select v-model="busQ.from">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>到达城市 <select v-model="busQ.to">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>出发日期 <input type="date" v-model="busQ.date"></label>
+            <button class="btn primary" @click="searchBuses">搜索班车</button>
+          </template>
+
+          <template v-else-if="prodTab === 'transfer'">
+            <label>服务城市 <select v-model="transferQ.areaId">
+              <option v-for="a in areas" :key="a.areaId" :value="a.areaId">{{ a.areaName }}</option>
+            </select></label>
+            <label>服务日期 <input type="date" v-model="transferQ.date"></label>
+            <label>服务类型
+              <select v-model="transferQ.type">
+                <option value="">不限</option><option value="airport_pickup">机场接机</option>
+                <option value="airport_dropoff">机场送机</option>
+                <option value="charter_daily">包车一日游</option>
+                <option value="station_transfer">车站接送</option>
+              </select>
+            </label>
+            <button class="btn primary" @click="searchTransfers">搜索接送服务</button>
+          </template>
+        </div>
+
+        <!-- 酒店列表 -->
+        <div v-if="prodTab === 'hotel'" class="grid">
+          <div v-for="h in hotels" :key="h.hotelId" class="card">
+            <div class="card-head">
+              <span class="star">{{ '★'.repeat(+h.starRatingCode) }}</span>
+              <span class="tag">{{ typeName('hotel', h.hotelTypeCode) }}</span>
+            </div>
+            <h3>{{ h.hotelName }}</h3>
+            <p class="desc">{{ h.summary }}</p>
+            <div class="meta">
+              <span>设施：{{ (h.facilityTags || []).join(' / ') }}</span>
+              <span>可售 {{ h.availableRoomCount }} 间</span>
+            </div>
+            <div class="card-foot">
+              <span class="price">¥{{ fmt(h.minSalePriceAmount) }}<small>/晚起</small></span>
+              <button class="btn" @click="openHotel(h)">查看房型</button>
+            </div>
+          </div>
+          <div v-if="hotels.length === 0" class="empty">暂无符合条件的酒店</div>
+        </div>
+
+        <!-- 景点列表 -->
+        <div v-else-if="prodTab === 'scenic'" class="grid">
+          <div v-for="s in scenics" :key="s.scenicSpotId" class="card">
+            <div class="card-head">
+              <span class="star rating-badge">{{ s.ratingCode }}</span>
+              <span class="tag">{{ typeName('scenic', s.scenicTypeCode) }}</span>
+            </div>
+            <h3>{{ s.scenicName }}</h3>
+            <p class="desc">{{ s.summary }}</p>
+            <div class="meta">
+              <span>开放 {{ s.openTime }} - {{ s.closeTime }}</span>
+              <span>可售 {{ s.availableTicketCount }} 张</span>
+            </div>
+            <div class="card-foot">
+              <span class="price">¥{{ fmt(s.minSalePriceAmount) }}<small>/张起</small></span>
+              <button class="btn" @click="openScenic(s)">查看票种</button>
+            </div>
+          </div>
+          <div v-if="scenics.length === 0" class="empty">暂无符合条件的景点</div>
+        </div>
+
+        <!-- 机票列表 -->
+        <div v-else-if="prodTab === 'flight'" class="list">
+          <div v-for="f in flights" :key="f.departureId" class="row-card">
+            <div class="route">
+              <div class="times">
+                <span class="time">{{ f.departureTime.slice(11,16) }}</span>
+                <span class="hub">{{ f.departureHubName }}</span>
+              </div>
+              <div class="line">
+                <span class="airline">{{ f.airlineCode }} {{ f.flightNo }}</span>
+                <span class="dur">{{ Math.floor(f.durationMinutes/60) }}h{{ f.durationMinutes%60 }}m</span>
+                <span class="airline">{{ f.arrivalHubName }}</span>
+              </div>
+              <div class="times">
+                <span class="time">{{ f.arrivalTime.slice(11,16) }}</span>
+                <span class="hub">{{ f.arrivalAreaId | areaName }}</span>
+              </div>
+            </div>
+            <div class="row-foot">
+              <span class="price">¥{{ fmt(f.minSalePriceAmount) }}<small>起</small></span>
+              <button class="btn" @click="openFlight(f)">选择舱位</button>
+            </div>
+          </div>
+          <div v-if="flights.length === 0" class="empty">暂无符合条件的航班</div>
+        </div>
+
+        <!-- 火车列表 -->
+        <div v-else-if="prodTab === 'train'" class="list">
+          <div v-for="t in trains" :key="t.departureId" class="row-card">
+            <div class="route">
+              <div class="times">
+                <span class="time">{{ t.departureTime.slice(11,16) }}</span>
+                <span class="hub">{{ t.departureHubName }}</span>
+              </div>
+              <div class="line">
+                <span class="airline">{{ t.trainNo }}</span>
+                <span class="dur">{{ Math.floor(t.durationMinutes/60) }}h{{ t.durationMinutes%60 }}m</span>
+                <span class="airline">{{ t.arrivalHubName }}</span>
+              </div>
+              <div class="times">
+                <span class="time">{{ t.arrivalTime.slice(11,16) }}</span>
+                <span class="hub">{{ t.arrivalAreaId | areaName }}</span>
+              </div>
+            </div>
+            <div class="row-foot">
+              <span class="price">¥{{ fmt(t.minSalePriceAmount) }}<small>起</small></span>
+              <button class="btn" @click="openTrain(t)">选择席别</button>
+            </div>
+          </div>
+          <div v-if="trains.length === 0" class="empty">暂无符合条件的车次</div>
+        </div>
+
+        <!-- 汽车列表 -->
+        <div v-else-if="prodTab === 'bus'" class="list">
+          <div v-for="b in buses" :key="b.departureId" class="row-card">
+            <div class="route">
+              <div class="times">
+                <span class="time">{{ b.departureTime.slice(11,16) }}</span>
+                <span class="hub">{{ b.departureHubName }}</span>
+              </div>
+              <div class="line">
+                <span class="airline">{{ b.routeName }}</span>
+                <span class="dur">{{ Math.floor(b.durationMinutes/60) }}h{{ b.durationMinutes%60 }}m</span>
+                <span class="airline">{{ b.arrivalHubName }}</span>
+              </div>
+              <div class="times">
+                <span class="time">{{ b.arrivalTime.slice(11,16) }}</span>
+                <span class="hub">{{ b.arrivalAreaId | areaName }}</span>
+              </div>
+            </div>
+            <div class="row-foot">
+              <span class="price">¥{{ fmt(b.salePriceAmount) }}</span>
+              <button class="btn" @click="openBus(b)">查看座位</button>
+            </div>
+          </div>
+          <div v-if="buses.length === 0" class="empty">暂无符合条件的班车</div>
+        </div>
+
+        <!-- 接送列表 -->
+        <div v-else-if="prodTab === 'transfer'" class="grid">
+          <div v-for="t in transfers" :key="t.serviceId" class="card">
+            <div class="card-head">
+              <span class="tag">{{ typeName('transfer', t.serviceTypeCode) }}</span>
+              <span class="tag">{{ typeName('vehicle', t.vehicleTypeCode) }}</span>
+            </div>
+            <h3>{{ t.serviceName }}</h3>
+            <div class="meta">
+              <span>载客 {{ t.passengerCapacity }} 人</span>
+              <span>可售 {{ t.availableInventory }} 单</span>
+            </div>
+            <div class="card-foot">
+              <button class="btn" @click="openTransfer(t)">查看价格</button>
+            </div>
+          </div>
+          <div v-if="transfers.length === 0" class="empty">暂无符合条件的接送服务</div>
+        </div>
+      </section>
+
+      <!-- ============ 订单页 ============ -->
+      <section v-else-if="tab === 'orders'" class="page">
+        <div class="page-toolbar">
+          <label>状态
+            <select v-model="orderQ.status">
+              <option value="">全部</option>
+              <option value="pending_payment">待支付</option>
+              <option value="paid">已支付</option>
+              <option value="in_progress">进行中</option>
+              <option value="finished">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </label>
+          <label>类型
+            <select v-model="orderQ.type">
+              <option value="">全部</option>
+              <option v-for="p in productTabs" :key="p.key" :value="p.key">{{ p.label }}</option>
+            </select>
+          </label>
+          <button class="btn primary" @click="loadOrders">刷新</button>
+        </div>
+        <div class="list">
+          <div v-for="o in orders" :key="o.orderId" class="row-card order-card">
+            <div class="order-info">
+              <span class="order-no">{{ o.orderNo }}</span>
+              <span class="tag">{{ typeName('order', o.orderTypeCode) }}</span>
+              <span class="status status-{{ o.statusCode }}">{{ statusName(o.statusCode) }}</span>
+            </div>
+            <div class="order-amt">
+              <span>应付 <b>¥{{ fmt(o.payableAmount) }}</b></span>
+              <span class="dim">商品 ¥{{ fmt(o.goodsAmount) }}</span>
+            </div>
+            <div class="order-time">{{ o.createdAt }}</div>
+            <div class="order-actions">
+              <button class="btn" @click="openOrder(o)">详情</button>
+              <button v-if="o.statusCode === 'pending_payment'" class="btn primary" @click="payOrder(o)">去支付</button>
+              <button v-if="o.statusCode === 'pending_payment'" class="btn danger" @click="cancelOrder(o)">取消</button>
+            </div>
+          </div>
+          <div v-if="orders.length === 0" class="empty">暂无订单</div>
+        </div>
+      </section>
+
+      <!-- ============ 优惠券页 ============ -->
+      <section v-else-if="tab === 'coupons'" class="page">
+        <h2 class="page-title">可领取的券</h2>
+        <div class="grid">
+          <div v-for="t in availableTemplates" :key="t.templateId" class="card coupon-card">
+            <div class="coupon-amt">
+              <template v-if="t.couponTypeCode.includes('CASH')">
+                <b>¥{{ fmt(t.discountAmount) }}</b><small>满{{ fmt(t.minSpendAmount) }}可用</small>
+              </template>
+              <template v-else>
+                <b>{{ (t.discountAmount*10).toFixed(1) }}折</b><small>满{{ fmt(t.minSpendAmount) }}可用</small>
+              </template>
+            </div>
+            <h4>{{ t.templateName }}</h4>
+            <p class="desc">{{ typeName('order', t.applicableProductType) }} · 每人限领 {{ t.perUserLimit }} 张</p>
+            <div class="card-foot">
+              <span class="dim">{{ t.validFrom.slice(0,10) }} ~ {{ t.validUntil.slice(0,10) }}</span>
+              <button class="btn primary" @click="receiveCoupon(t)">领取</button>
+            </div>
+          </div>
+          <div v-if="availableTemplates.length === 0" class="empty">暂无可领取的券</div>
+        </div>
+
+        <h2 class="page-title">我的券</h2>
+        <div class="grid">
+          <div v-for="c in myCoupons" :key="c.userCouponId" class="card coupon-card">
+            <div class="coupon-amt">
+              <template v-if="c.couponTypeCode.includes('CASH')">
+                <b>¥{{ fmt(c.discountAmount) }}</b><small>满{{ fmt(c.minSpendAmount) }}可用</small>
+              </template>
+              <template v-else>
+                <b>{{ (c.discountAmount*10).toFixed(1) }}折</b><small>满{{ fmt(c.minSpendAmount) }}可用</small>
+              </template>
+            </div>
+            <h4>{{ c.templateName }}</h4>
+            <p class="desc">{{ typeName('order', c.applicableProductType) }}</p>
+            <div class="card-foot">
+              <span class="status status-{{ c.statusCode }}">{{ c.statusCode === 'available' ? '可用' : c.statusCode === 'used' ? '已使用' : '已过期' }}</span>
+              <span class="dim">{{ c.validUntil.slice(0,10) }} 到期</span>
+            </div>
+          </div>
+          <div v-if="myCoupons.length === 0" class="empty">暂无优惠券</div>
+        </div>
+      </section>
+
+      <!-- ============ 我的页 ============ -->
+      <section v-else-if="tab === 'me'" class="page">
+        <div class="me-grid">
+          <div class="card me-card">
+            <h3>我的资料</h3>
+            <div class="me-row"><span>昵称</span><b>{{ me.nickname }}</b></div>
+            <div class="me-row"><span>手机</span><b>{{ me.phone }}</b></div>
+            <div class="me-row"><span>实名</span><b>{{ me.realName || '-' }}（{{ me.identityNoMasked || '-' }}）</b></div>
+            <div class="me-row"><span>居住地</span><b>{{ me.residenceCityName || '-' }}</b></div>
+            <div class="me-row"><span>职业</span><b>{{ me.occupation || '-' }}</b></div>
+            <div class="me-row"><span>状态</span><b>{{ me.statusCode }}</b></div>
+          </div>
+
+          <div class="card me-card">
+            <h3>会员与积分</h3>
+            <div class="me-row"><span>等级</span><b class="gold">{{ levelName(account.memberLevelCode) }}</b></div>
+            <div class="me-row"><span>积分余额</span><b>{{ account.pointsBalance }}</b></div>
+            <div class="me-row"><span>累计积分</span><b>{{ account.totalPoints }}</b></div>
+            <div class="me-row"><span>成长值</span><b>{{ account.growthValue }}</b></div>
+            <button class="btn" @click="toggleLedger">
+              {{ showLedger ? '收起积分流水' : '查看积分流水' }}
+            </button>
+            <div v-if="showLedger" class="ledger">
+              <div v-for="l in ledger" :key="l.ledgerId" class="ledger-row">
+                <span>{{ ledgerName(l.ledgerTypeCode) }}</span>
+                <span :class="l.pointsDelta > 0 ? 'pos' : 'neg'">
+                  {{ l.pointsDelta > 0 ? '+' : '' }}{{ l.pointsDelta }}
+                </span>
+                <span class="dim">{{ l.balanceAfter }}</span>
+                <span class="dim">{{ l.createdAt }}</span>
+              </div>
+              <div v-if="ledger.length === 0" class="dim">暂无流水</div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="page-title">常用出行人</h2>
+        <div class="grid">
+          <div v-for="t in travelers" :key="t.travelerId" class="card">
+            <h3>{{ t.travelerName }}</h3>
+            <p class="desc">
+              {{ t.identityTypeCode === 'id_card' ? '身份证' : '护照' }}：{{ t.identityNoMasked }}<br/>
+              {{ t.genderCode === 'male' ? '男' : '女' }} · {{ t.birthDate }} · {{ t.phone }}
+            </p>
+            <div class="card-foot">
+              <span class="status status-{{ t.statusCode }}">{{ t.statusCode === 'active' ? '有效' : '已停用' }}</span>
+              <button class="btn" @click="openTravelerEdit(t)">编辑</button>
+              <button class="btn danger" @click="deactivateTraveler(t)">停用</button>
+            </div>
+          </div>
+          <div class="card add-card" @click="openTravelerEdit()">
+            <span class="plus">＋</span>
+            <span>新增出行人</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ 房型/票种/舱位 弹窗 ============ -->
+    <div v-if="modal" class="modal-mask" @click.self="modal = null">
+      <div class="modal">
+        <h3>{{ modalTitle }}</h3>
+
+        <!-- 酒店房型 -->
+        <div v-if="modalType === 'hotel'">
+          <div v-for="rt in modalData.roomTypes" :key="rt.roomTypeId" class="rt-row">
+            <div class="rt-info">
+              <b>{{ rt.roomTypeName }}</b>
+              <span class="dim">{{ rt.areaSize }}㎡ · 可住{{ rt.maxGuests }}人 · 余{{ rt.availableRoomCount }}间</span>
+            </div>
+            <div class="rt-price">¥{{ fmt(rt.firstNightSalePriceAmount) }}<small>/晚</small></div>
+            <button class="btn primary" :disabled="rt.availableRoomCount <= 0" @click="buyHotel(rt)">预订</button>
+          </div>
+          <div v-if="modalData.roomTypes.length === 0" class="empty">该日期区间无可用房型</div>
+        </div>
+
+        <!-- 景点票种 -->
+        <div v-else-if="modalType === 'scenic'">
+          <div v-for="t in modalData.ticketTypes" :key="t.ticketTypeId" class="rt-row">
+            <div class="rt-info">
+              <b>{{ t.ticketTypeName }}</b>
+              <span class="dim">余{{ t.availableTicketCount }}张</span>
+            </div>
+            <div class="rt-price">¥{{ fmt(t.salePriceAmount) }}</div>
+            <button class="btn primary" :disabled="t.availableTicketCount <= 0" @click="buyScenic(t)">购买</button>
+          </div>
+          <div v-if="modalData.ticketTypes.length === 0" class="empty">当天无可用票种</div>
+        </div>
+
+        <!-- 机票舱位 -->
+        <div v-else-if="modalType === 'flight'">
+          <div v-for="c in modalData.cabins" :key="c.cabinClassCode" class="rt-row">
+            <div class="rt-info">
+              <b>{{ c.cabinClassCode === 'economy' ? '经济舱' : '商务舱' }}</b>
+              <span class="dim">余{{ c.availableInventory }}座</span>
+            </div>
+            <div class="rt-price">¥{{ fmt(c.salePriceAmount) }}</div>
+            <button class="btn primary" :disabled="c.availableInventory <= 0" @click="buyFlight(c)">购买</button>
+          </div>
+        </div>
+
+        <!-- 火车席别 -->
+        <div v-else-if="modalType === 'train'">
+          <div v-for="s in modalData.seats" :key="s.seatClassCode" class="rt-row">
+            <div class="rt-info">
+              <b>{{ seatName(s.seatClassCode) }}</b>
+              <span class="dim">余{{ s.availableInventory }}座</span>
+            </div>
+            <div class="rt-price">¥{{ fmt(s.salePriceAmount) }}</div>
+            <button class="btn primary" :disabled="s.availableInventory <= 0" @click="buyTrain(s)">购买</button>
+          </div>
+        </div>
+
+        <!-- 汽车座位 -->
+        <div v-else-if="modalType === 'bus'">
+          <div v-for="s in modalData.seats" :key="s.seatClassCode" class="rt-row">
+            <div class="rt-info"><b>大巴座</b><span class="dim">余{{ s.availableInventory }}座</span></div>
+            <div class="rt-price">¥{{ fmt(s.salePriceAmount) }}</div>
+            <button class="btn primary" :disabled="s.availableInventory <= 0" @click="buyBus(s)">购买</button>
+          </div>
+        </div>
+
+        <!-- 接送服务 -->
+        <div v-else-if="modalType === 'transfer'">
+          <div class="rt-row">
+            <div class="rt-info">
+              <b>{{ modalData.serviceName }}</b>
+              <span class="dim">载客{{ modalData.passengerCapacity }}人 · 余{{ modalData.availableInventory }}单</span>
+            </div>
+            <div class="rt-price">¥{{ fmt(modalData.salePriceAmount) }}</div>
+            <button class="btn primary" :disabled="modalData.availableInventory <= 0" @click="buyTransfer()">预订</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 下单弹窗 ============ -->
+    <div v-if="orderModal" class="modal-mask" @click.self="orderModal = false">
+      <div class="modal">
+        <h3>确认订单</h3>
+        <div class="rt-row">
+          <div class="rt-info"><b>{{ orderDraft.productName }}</b></div>
+          <div class="rt-price">¥{{ fmt(orderDraft.unitPrice) }}</div>
+        </div>
+        <div v-if="orderDraft.type === 'hotel_room'" class="form-row">
+          <label>入住 <input type="date" v-model="orderDraft.checkIn"></label>
+          <label>离店 <input type="date" v-model="orderDraft.checkOut"></label>
+        </div>
+        <div class="form-row">
+          <label>出行人
+            <select v-model="orderDraft.travelerId">
+              <option value="">不指定</option>
+              <option v-for="t in travelers" :key="t.travelerId" :value="t.travelerId">{{ t.travelerName }}</option>
+            </select>
+          </label>
+          <label>优惠券
+            <select v-model="orderDraft.couponId">
+              <option value="">不使用</option>
+              <option v-for="c in usableCoupons" :key="c.userCouponId" :value="c.userCouponId">
+                {{ c.templateName }}（{{ c.couponTypeCode.includes('CASH') ? '¥' + fmt(c.discountAmount) : (c.discountAmount*10).toFixed(1) + '折' }}）
+              </option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="check"><input type="checkbox" v-model="orderDraft.usePoints" /> 使用积分抵扣</label>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" @click="orderModal = false">取消</button>
+          <button class="btn primary" @click="createOrder">提交订单</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 订单详情弹窗 ============ -->
+    <div v-if="detailModal" class="modal-mask" @click.self="detailModal = false">
+      <div class="modal wide">
+        <h3>订单详情 <span class="status status-{{ detail.statusCode }}">{{ statusName(detail.statusCode) }}</span></h3>
+        <div class="detail-grid">
+          <div><span class="dim">订单号</span><b>{{ detail.orderNo }}</b></div>
+          <div><span class="dim">类型</span><b>{{ typeName('order', detail.orderTypeCode) }}</b></div>
+          <div><span class="dim">商品金额</span><b>¥{{ fmt(detail.goodsAmount) }}</b></div>
+          <div><span class="dim">营销优惠</span><b>-¥{{ fmt(detail.marketingDiscountAmount || 0) }}</b></div>
+          <div><span class="dim">券优惠</span><b>-¥{{ fmt(detail.couponDiscountAmount || 0) }}</b></div>
+          <div><span class="dim">积分抵扣</span><b>-¥{{ fmt(detail.pointDiscountAmount || 0) }}</b></div>
+          <div><span class="dim">应付</span><b class="price">¥{{ fmt(detail.payableAmount) }}</b></div>
+          <div><span class="dim">实付</span><b>{{ detail.paidAmount != null ? '¥' + fmt(detail.paidAmount) : '-' }}</b></div>
+        </div>
+        <h4>商品明细</h4>
+        <div v-for="it in detail.items" :key="it.orderItemId" class="rt-row">
+          <div class="rt-info">
+            <b>{{ it.productName }}</b>
+            <span class="dim">{{ it.travelTime }} {{ it.travelEndTime ? '→ ' + it.travelEndTime : '' }} · {{ statusName(it.statusCode) }}</span>
+          </div>
+          <div class="rt-price">¥{{ fmt(it.saleAmount) }}</div>
+        </div>
+        <h4 v-if="detail.payments && detail.payments.length">支付记录</h4>
+        <div v-for="p in detail.payments || []" :key="p.paymentId" class="rt-row">
+          <div class="rt-info">
+            <b>{{ p.paymentNo }}</b>
+            <span class="dim">{{ p.paymentMethodCode }} · {{ p.statusCode }} {{ p.paidAt ? '· ' + p.paidAt : '' }}</span>
+          </div>
+          <div class="rt-price">¥{{ fmt(p.amount) }}</div>
+        </div>
+        <h4 v-if="detail.refundRequests && detail.refundRequests.length">退款申请</h4>
+        <div v-for="r in detail.refundRequests || []" :key="r.refundRequestId" class="rt-row">
+          <div class="rt-info">
+            <b>{{ r.refundRequestNo }}</b>
+            <span class="dim">{{ statusName(r.statusCode) }} · {{ r.requestedAt }}</span>
+          </div>
+          <div class="rt-price">¥{{ fmt(r.requestedAmount) }}</div>
+        </div>
+        <div class="modal-foot">
+          <button v-if="detail.statusCode === 'pending_payment'" class="btn primary" @click="payOrder(detail)">去支付</button>
+          <button v-if="detail.statusCode === 'pending_payment'" class="btn danger" @click="cancelOrder(detail)">取消订单</button>
+          <button v-if="detail.statusCode === 'paid' || detail.statusCode === 'in_progress'" class="btn" @click="openRefund(detail)">申请退款</button>
+          <button class="btn" @click="detailModal = false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 支付模拟弹窗 ============ -->
+    <div v-if="payModal" class="modal-mask" @click.self="payModal = false">
+      <div class="modal">
+        <h3>模拟支付</h3>
+        <p class="desc">订单应付：<b class="price">¥{{ fmt(payModal.order.payableAmount) }}</b></p>
+        <div class="pay-options">
+          <button v-for="m in ['alipay','wechat','unionpay']" :key="m" class="btn pay-method"
+                  :class="{primary: payModal.method === m}" @click="payModal.method = m">
+            {{ m === 'alipay' ? '支付宝' : m === 'wechat' ? '微信' : '银联' }}
+          </button>
+        </div>
+        <p v-if="payModal.payment" class="desc dim">
+          支付单 {{ payModal.payment.paymentNo }} · {{ payModal.payment.statusCode }}
+        </p>
+        <div class="modal-foot">
+          <button class="btn" @click="payModal = false">关闭</button>
+          <button class="btn primary" @click="confirmPay" :disabled="payModal.paying">
+            {{ payModal.paying ? '处理中...' : '发起支付' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 退款弹窗 ============ -->
+    <div v-if="refundModal" class="modal-mask" @click.self="refundModal = false">
+      <div class="modal">
+        <h3>申请退款</h3>
+        <div v-for="it in refundModal.items" :key="it.orderItemId" class="rt-row">
+          <div class="rt-info">
+            <b>{{ it.productName }}</b>
+            <span class="dim">¥{{ fmt(it.saleAmount) }} · {{ statusName(it.statusCode) }}</span>
+          </div>
+          <label class="refund-amt">
+            金额 <input type="number" v-model="it._refundAmt" :max="it.saleAmount" step="0.01" />
+          </label>
+        </div>
+        <div class="form-row"><label>原因 <input v-model="refundModal.reason" placeholder="退款原因" /></label></div>
+        <div class="modal-foot">
+          <button class="btn" @click="refundModal = false">取消</button>
+          <button class="btn danger" @click="submitRefund">提交退款申请</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 出行人编辑弹窗 ============ -->
+    <div v-if="travelerModal" class="modal-mask" @click.self="travelerModal = false">
+      <div class="modal">
+        <h3>{{ travelerModal.id ? '编辑出行人' : '新增出行人' }}</h3>
+        <div class="form-row">
+          <label>姓名 <input v-model="travelerModal.name" /></label>
+          <label>证件类型
+            <select v-model="travelerModal.idType">
+              <option value="id_card">身份证</option><option value="passport">护照</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>证件号 <input v-model="travelerModal.idNo" /></label>
+          <label>手机号 <input v-model="travelerModal.phone" /></label>
+        </div>
+        <div class="form-row">
+          <label>性别
+            <select v-model="travelerModal.gender">
+              <option value="male">男</option><option value="female">女</option>
+            </select>
+          </label>
+          <label>生日 <input type="date" v-model="travelerModal.birth" /></label>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" @click="travelerModal = false">取消</button>
+          <button class="btn primary" @click="saveTraveler">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- toast -->
+    <div v-if="toast" class="toast" :class="toast.type">{{ toast.msg }}</div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
