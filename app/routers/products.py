@@ -415,6 +415,8 @@ def list_scenic_spots(
     ] = 20,
 ):
     offset, limit = offset_limit(page_no, page_size)
+    # 日期参数预校验，非法格式直接 400（避免把脏值传入 MySQL 导致 500）
+    parse_date(travel_date, "travelDate")
     conditions = [
         "s.area_id = %s",
         "s.status_code = 'active'",
@@ -654,6 +656,8 @@ def search_flights(
     ] = 20,
 ):
     offset, limit = offset_limit(page_no, page_size)
+    # 日期参数预校验，非法格式直接 400（避免把脏值传入 MySQL 导致 500）
+    parse_date(departure_date, "departureDate")
     conditions = [
         "r.departure_area_id = %s",
         "r.arrival_area_id = %s",
@@ -871,6 +875,8 @@ def search_trains(
     ] = 20,
 ):
     offset, limit = offset_limit(page_no, page_size)
+    # 日期参数预校验，非法格式直接 400（避免把脏值传入 MySQL 导致 500）
+    parse_date(departure_date, "departureDate")
     conditions = [
         "r.departure_area_id = %s",
         "r.arrival_area_id = %s",
@@ -1076,6 +1082,8 @@ def search_buses(
     ] = 20,
 ):
     offset, limit = offset_limit(page_no, page_size)
+    # 日期参数预校验，非法格式直接 400（避免把脏值传入 MySQL 导致 500）
+    parse_date(departure_date, "departureDate")
     conditions = [
         "r.departure_area_id = %s",
         "r.arrival_area_id = %s",
@@ -1253,6 +1261,8 @@ def list_transfers(
     ] = 20,
 ):
     offset, limit = offset_limit(page_no, page_size)
+    # 日期参数预校验，非法格式直接 400（避免把脏值传入 MySQL 导致 500）
+    parse_date(business_date, "businessDate")
     conditions = [
         "s.area_id = %s",
         "s.status_code = 'active'",
