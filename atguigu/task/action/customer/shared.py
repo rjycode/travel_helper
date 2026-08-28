@@ -145,3 +145,73 @@ async def fetch_hotels(area_id: int, check_in_date: str, check_out_date: str) ->
         return _extract_list(r.json())
     except Exception:
         return []
+
+
+async def fetch_scenic_spots(area_id: int, travel_date: str) -> list[dict]:
+    """查询景点：城市→游玩日期，返回景点列表。"""
+    try:
+        r = await http_client.http_client.get(
+            f"{_travel_base_url()}/api/v1/scenic-spots",
+            params={"areaId": area_id, "travelDate": travel_date},
+        )
+        return _extract_list(r.json())
+    except Exception:
+        return []
+
+
+async def fetch_trains(departure_area_id: int, arrival_area_id: int, departure_date: str) -> list[dict]:
+    """查询火车票：出发城市→到达城市→日期，返回车次列表。"""
+    try:
+        r = await http_client.http_client.get(
+            f"{_travel_base_url()}/api/v1/trains/search",
+            params={
+                "departureAreaId": departure_area_id,
+                "arrivalAreaId": arrival_area_id,
+                "departureDate": departure_date,
+            },
+        )
+        return _extract_list(r.json())
+    except Exception:
+        return []
+
+
+async def fetch_buses(departure_area_id: int, arrival_area_id: int, departure_date: str) -> list[dict]:
+    """查询汽车票：出发城市→到达城市→日期，返回班车列表。"""
+    try:
+        r = await http_client.http_client.get(
+            f"{_travel_base_url()}/api/v1/buses/search",
+            params={
+                "departureAreaId": departure_area_id,
+                "arrivalAreaId": arrival_area_id,
+                "departureDate": departure_date,
+            },
+        )
+        return _extract_list(r.json())
+    except Exception:
+        return []
+
+
+async def fetch_transfers(area_id: int, business_date: str) -> list[dict]:
+    """查询接送服务：城市→日期，返回服务列表。"""
+    try:
+        r = await http_client.http_client.get(
+            f"{_travel_base_url()}/api/v1/transfers",
+            params={"areaId": area_id, "businessDate": business_date},
+        )
+        return _extract_list(r.json())
+    except Exception:
+        return []
+
+
+async def fetch_travel_order(order_no: str) -> dict | None:
+    """按订单号查询旅游订单（含明细）。"""
+    if not order_no:
+        return None
+    try:
+        r = await http_client.http_client.get(
+            f"{_travel_base_url()}/api/v1/demo/orders/{quote(order_no)}"
+        )
+        data = r.json()
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None

@@ -79,6 +79,86 @@ slots:
     label: 酒店查询结果
     description: 酒店搜索结果文本
 
+  scenic_city:
+    type: text
+    label: 景点城市
+    description: 景点查询的城市名称，如 上海、三亚
+
+  scenic_date:
+    type: text
+    label: 游玩日期
+    description: 景点游玩日期，格式 YYYY-MM-DD，如 2026-09-01
+
+  scenic_results:
+    type: text
+    label: 景点查询结果
+    description: 景点搜索结果文本
+
+  train_from:
+    type: text
+    label: 火车出发城市
+    description: 火车票查询的出发城市名称
+
+  train_to:
+    type: text
+    label: 火车到达城市
+    description: 火车票查询的到达城市名称
+
+  train_date:
+    type: text
+    label: 火车出发日期
+    description: 火车票查询的出发日期，格式 YYYY-MM-DD
+
+  train_results:
+    type: text
+    label: 火车查询结果
+    description: 火车票搜索结果文本
+
+  bus_from:
+    type: text
+    label: 汽车出发城市
+    description: 汽车票查询的出发城市名称
+
+  bus_to:
+    type: text
+    label: 汽车到达城市
+    description: 汽车票查询的到达城市名称
+
+  bus_date:
+    type: text
+    label: 汽车出发日期
+    description: 汽车票查询的出发日期，格式 YYYY-MM-DD
+
+  bus_results:
+    type: text
+    label: 汽车查询结果
+    description: 汽车票搜索结果文本
+
+  transfer_city:
+    type: text
+    label: 接送服务城市
+    description: 接送服务查询的城市名称
+
+  transfer_date:
+    type: text
+    label: 接送服务日期
+    description: 接送服务日期，格式 YYYY-MM-DD
+
+  transfer_results:
+    type: text
+    label: 接送服务查询结果
+    description: 接送服务搜索结果文本
+
+  travel_order_no:
+    type: text
+    label: 旅游订单号
+    description: 旅游平台订单号，如 ORD0000000001
+
+  order_results:
+    type: text
+    label: 订单查询结果
+    description: 旅游订单查询结果文本
+
 flows:
   onboarding:
     name: 欢迎引导
@@ -92,130 +172,9 @@ flows:
         type: action
         action: action_response
         args:
-          text: "你好，这里是 Atguigu 出行助手。我可以帮你查订单状态、查物流、了解商品信息、提交退款申请，也可以帮你查机票和酒店。比如告诉我\"帮我查上海到北京的机票\"或\"查一下上海的酒店\"。"
+          text: "你好，这里是 Atguigu 旅游出行助手。我可以帮你查机票、火车票、汽车票、酒店、景点和接送服务，也可以帮你查询旅游订单。比如告诉我\"帮我查上海到北京的机票\"、\"查一下上海的酒店\"或\"查一下我的订单\"。"
         next: end
 
-      - id: end
-        type: end
-        next: [ ]
-
-  order_status_query:
-    name: 订单状态查询
-    description: 帮用户查询订单当前的处理状态，例如待付款、待发货、已发货或已完成。
-    steps:
-      - id: start
-        type: start
-        next: ask_order_number
-      - id: ask_order_number
-        type: collect
-        slot_name: order_number
-        response:
-          text: "请告诉我你的订单号。"
-
-        next: lookup_order_status
-      - id: lookup_order_status
-        type: action
-        action: action_lookup_order_status
-        next: show_order_status
-
-      - id: show_order_status
-        type: action
-        action: action_response
-        args:
-          text: "订单{{ slots.order_number }}当前状态是：{{ slots.order_status }}。{{ slots.order_summary }}"
-        next: end
-      - id: end
-        type: end
-        next: [ ]
-
-  logistics_tracking:
-    name: 物流查询
-    description: 帮用户查询订单物流进度、物流单号和配送公司信息。
-    steps:
-      - id: start
-        type: start
-        next: ask_order_number
-
-      - id: ask_order_number
-        type: collect
-        slot_name: order_number
-        response:
-          text: "请告诉我你的订单号。"
-        next: lookup_logistics
-
-      - id: lookup_logistics
-        type: action
-        action: action_lookup_logistics
-        next: show_logistics
-
-      - id: show_logistics
-        type: action
-        action: action_response
-        args:
-          text: "订单{{ slots.order_number }}由{{ slots.logistics_company }}配送，物流单号是{{ slots.tracking_number }}。当前进度：{{ slots.logistics_status }}。"
-        next: end
-
-      - id: end
-        type: end
-        next: [ ]
-
-  refund_request:
-    name: 退款申请
-    description: 帮用户提交简单的退款申请，收集订单号和退款原因。
-    steps:
-      - id: start
-        type: start
-        next: ask_order_number
-
-      - id: ask_order_number
-        type: collect
-        slot_name: order_number
-        response:
-          text: "请告诉我你的订单号。"
-        next: ask_refund_reason
-
-      - id: ask_refund_reason
-        type: collect
-        slot_name: refund_reason
-        response:
-          text: "请简单说一下退款原因。"
-        next: refund_submitted
-
-      - id: refund_submitted
-        type: action
-        action: action_response
-        args:
-          text: "好的，订单{{ slots.order_number }}的退款申请已提交，原因是：{{ slots.refund_reason }}。后续会尽快为你处理。"
-        next: end
-
-
-      - id: end
-        type: end
-        next: [ ]
-
-  similar_product_recommendation:
-    name: 相似商品推荐
-    description: 基于当前商品为用户推荐类似商品。当前版本先保留流程入口，具体推荐能力后续接入。
-    steps:
-      - id: start
-        type: start
-        next:
-          - if: "slots.get('product_id')"
-            then: respond
-          - else: ask_product_id
-
-      - id: ask_product_id
-        type: collect
-        slot_name: product_id
-        response:
-          text: "请先选择一个商品，再继续咨询。"
-
-        next: respond
-
-      - id: respond
-        type: action
-        action: action_recommend_similar_products
-        next: end
       - id: end
         type: end
         next: [ ]
@@ -304,6 +263,203 @@ flows:
         action: action_response
         args:
           text: "{{ slots.hotel_results }}"
+        next: end
+
+      - id: end
+        type: end
+        next: [ ]
+
+  scenic_search:
+    name: 景点查询
+    description: 帮用户查询景点，需要收集城市和游玩日期，然后展示景点和门票价格。当用户询问"查景点""景区门票""去哪里玩"时使用。
+    steps:
+      - id: start
+        type: start
+        next: ask_scenic_city
+
+      - id: ask_scenic_city
+        type: collect
+        slot_name: scenic_city
+        response:
+          text: "请问想去哪个城市游玩？"
+        next: ask_scenic_date
+
+      - id: ask_scenic_date
+        type: collect
+        slot_name: scenic_date
+        response:
+          text: "请问哪天去？（格式 YYYY-MM-DD，例如 2026-09-01）"
+        next: search_scenic
+
+      - id: search_scenic
+        type: action
+        action: action_search_scenic_spots
+        next: show_scenic
+
+      - id: show_scenic
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.scenic_results }}"
+        next: end
+
+      - id: end
+        type: end
+        next: [ ]
+
+  train_search:
+    name: 火车票查询
+    description: 帮用户查询火车票，需要收集出发城市、到达城市和出发日期，然后展示车次和价格。当用户询问"查火车票""高铁""动车"时使用。
+    steps:
+      - id: start
+        type: start
+        next: ask_train_from
+
+      - id: ask_train_from
+        type: collect
+        slot_name: train_from
+        response:
+          text: "请问从哪个城市出发？"
+        next: ask_train_to
+
+      - id: ask_train_to
+        type: collect
+        slot_name: train_to
+        response:
+          text: "请问到达哪个城市？"
+        next: ask_train_date
+
+      - id: ask_train_date
+        type: collect
+        slot_name: train_date
+        response:
+          text: "请问几号出发？（格式 YYYY-MM-DD，例如 2026-09-01）"
+        next: search_trains
+
+      - id: search_trains
+        type: action
+        action: action_search_trains
+        next: show_trains
+
+      - id: show_trains
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.train_results }}"
+        next: end
+
+      - id: end
+        type: end
+        next: [ ]
+
+  bus_search:
+    name: 汽车票查询
+    description: 帮用户查询汽车票，需要收集出发城市、到达城市和出发日期，然后展示班次和票价。当用户询问"查汽车票""大巴""班车"时使用。
+    steps:
+      - id: start
+        type: start
+        next: ask_bus_from
+
+      - id: ask_bus_from
+        type: collect
+        slot_name: bus_from
+        response:
+          text: "请问从哪个城市出发？"
+        next: ask_bus_to
+
+      - id: ask_bus_to
+        type: collect
+        slot_name: bus_to
+        response:
+          text: "请问到达哪个城市？"
+        next: ask_bus_date
+
+      - id: ask_bus_date
+        type: collect
+        slot_name: bus_date
+        response:
+          text: "请问几号出发？（格式 YYYY-MM-DD，例如 2026-09-01）"
+        next: search_buses
+
+      - id: search_buses
+        type: action
+        action: action_search_buses
+        next: show_buses
+
+      - id: show_buses
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.bus_results }}"
+        next: end
+
+      - id: end
+        type: end
+        next: [ ]
+
+  transfer_search:
+    name: 接送服务查询
+    description: 帮用户查询接送服务（接机、送机、包车等），需要收集城市和服务日期。当用户询问"接送""接机""包车"时使用。
+    steps:
+      - id: start
+        type: start
+        next: ask_transfer_city
+
+      - id: ask_transfer_city
+        type: collect
+        slot_name: transfer_city
+        response:
+          text: "请问在哪个城市使用接送服务？"
+        next: ask_transfer_date
+
+      - id: ask_transfer_date
+        type: collect
+        slot_name: transfer_date
+        response:
+          text: "请问哪天需要？（格式 YYYY-MM-DD，例如 2026-09-01）"
+        next: search_transfers
+
+      - id: search_transfers
+        type: action
+        action: action_search_transfers
+        next: show_transfers
+
+      - id: show_transfers
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.transfer_results }}"
+        next: end
+
+      - id: end
+        type: end
+        next: [ ]
+
+  travel_order_query:
+    name: 旅游订单查询
+    description: 帮用户查询旅游平台订单的状态和出行信息，需要收集订单号。当用户询问"查订单""订单状态""我的订单"时使用。
+    steps:
+      - id: start
+        type: start
+        next: ask_order_no
+
+      - id: ask_order_no
+        type: collect
+        slot_name: travel_order_no
+        response:
+          text: "请告诉我你的旅游订单号（例如 ORD0000000001）。"
+        next: lookup_order
+
+      - id: lookup_order
+        type: action
+        action: action_lookup_travel_order
+        next: show_order
+
+      - id: show_order
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.order_results }}"
         next: end
 
       - id: end
