@@ -186,12 +186,13 @@ class DialogueEngine:
             return None
 
         elif object.type == "flight":
-            # 机票卡片：启动机票查询流程，并回填出发/到达城市
+            # 机票卡片：启动机票查询流程，并回填出发/到达城市 + 出发日期
             attrs = object.attributes or {}
             commands: list[Command] = [StartFlowCommand(command="start_flow", flow="flight_search")]
             slots = {
                 "departure_city": attrs.get("departure_city"),
                 "arrival_city": attrs.get("arrival_city"),
+                "departure_date": attrs.get("departure_date"),
             }
             slots = {k: v for k, v in slots.items() if v}
             if slots:
@@ -199,12 +200,71 @@ class DialogueEngine:
             return commands
 
         elif object.type == "hotel":
-            # 酒店卡片：启动酒店查询流程，并回填城市
+            # 酒店卡片：启动酒店查询流程，并回填城市 + 入住/离店日期
             attrs = object.attributes or {}
             commands = [StartFlowCommand(command="start_flow", flow="hotel_search")]
-            if attrs.get("hotel_city"):
-                commands.append(SetSlotsCommand(command="set_slots",
-                                                slots={"hotel_city": attrs.get("hotel_city")}))
+            slots = {
+                "hotel_city": attrs.get("hotel_city"),
+                "check_in_date": attrs.get("check_in_date"),
+                "check_out_date": attrs.get("check_out_date"),
+            }
+            slots = {k: v for k, v in slots.items() if v}
+            if slots:
+                commands.append(SetSlotsCommand(command="set_slots", slots=slots))
+            return commands
+
+        elif object.type == "scenic":
+            # 景点卡片：启动景点查询流程，并回填城市 + 游玩日期
+            attrs = object.attributes or {}
+            commands = [StartFlowCommand(command="start_flow", flow="scenic_search")]
+            slots = {
+                "scenic_city": attrs.get("scenic_city"),
+                "scenic_date": attrs.get("scenic_date"),
+            }
+            slots = {k: v for k, v in slots.items() if v}
+            if slots:
+                commands.append(SetSlotsCommand(command="set_slots", slots=slots))
+            return commands
+
+        elif object.type == "train":
+            # 火车票卡片：启动火车查询流程，并回填出发/到达城市 + 日期
+            attrs = object.attributes or {}
+            commands = [StartFlowCommand(command="start_flow", flow="train_search")]
+            slots = {
+                "train_from": attrs.get("train_from"),
+                "train_to": attrs.get("train_to"),
+                "train_date": attrs.get("train_date"),
+            }
+            slots = {k: v for k, v in slots.items() if v}
+            if slots:
+                commands.append(SetSlotsCommand(command="set_slots", slots=slots))
+            return commands
+
+        elif object.type == "bus":
+            # 汽车票卡片：启动汽车查询流程，并回填出发/到达城市 + 日期
+            attrs = object.attributes or {}
+            commands = [StartFlowCommand(command="start_flow", flow="bus_search")]
+            slots = {
+                "bus_from": attrs.get("bus_from"),
+                "bus_to": attrs.get("bus_to"),
+                "bus_date": attrs.get("bus_date"),
+            }
+            slots = {k: v for k, v in slots.items() if v}
+            if slots:
+                commands.append(SetSlotsCommand(command="set_slots", slots=slots))
+            return commands
+
+        elif object.type == "transfer":
+            # 接送服务卡片：启动接送查询流程，并回填城市 + 日期
+            attrs = object.attributes or {}
+            commands = [StartFlowCommand(command="start_flow", flow="transfer_search")]
+            slots = {
+                "transfer_city": attrs.get("transfer_city"),
+                "transfer_date": attrs.get("transfer_date"),
+            }
+            slots = {k: v for k, v in slots.items() if v}
+            if slots:
+                commands.append(SetSlotsCommand(command="set_slots", slots=slots))
             return commands
 
         else:
