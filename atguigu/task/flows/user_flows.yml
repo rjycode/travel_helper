@@ -159,6 +159,41 @@ slots:
     label: 订单查询结果
     description: 旅游订单查询结果文本
 
+  refund_order_no:
+    type: text
+    label: 退款订单号
+    description: 要申请退款的旅游订单号，如 ORD0000000001
+
+  refund_reason:
+    type: text
+    label: 退款原因
+    description: 申请退款的原因，如 行程变更、计划有变
+
+  refund_results:
+    type: text
+    label: 退款申请结果
+    description: 退款申请提交后的结果文本
+
+  work_order_type:
+    type: text
+    label: 工单类型
+    description: 工单类型：after_sale（售后）/complaint（投诉）/refund（退款）/consult（咨询）
+
+  work_order_order_no:
+    type: text
+    label: 工单关联订单号
+    description: 工单关联的旅游订单号（可选），如 ORD0000000001
+
+  work_order_description:
+    type: text
+    label: 问题描述
+    description: 工单问题描述，用户遇到的问题详情
+
+  work_order_results:
+    type: text
+    label: 工单提交结果
+    description: 工单提交成功后的结果文本
+
 flows:
   onboarding:
     name: 欢迎引导
@@ -460,6 +495,89 @@ flows:
         action: action_response
         args:
           text: "{{ slots.order_results }}"
+        next: end
+
+      - id: end
+        type: end
+        next: [ ]
+
+  travel_refund_request:
+    name: 旅游退款申请
+    description: 帮用户对旅游订单发起退款申请，需要收集订单号和退款原因，然后提交退款申请并返回处理结果。当用户询问"退款""我要退""申请退款"时使用。
+    steps:
+      - id: start
+        type: start
+        next: ask_refund_order_no
+
+      - id: ask_refund_order_no
+        type: collect
+        slot_name: refund_order_no
+        response:
+          text: "请告诉我需要退款的旅游订单号（例如 ORD0000000001）。"
+        next: ask_refund_reason
+
+      - id: ask_refund_reason
+        type: collect
+        slot_name: refund_reason
+        response:
+          text: "请问退款原因是什么？（例如：行程变更、计划有变）"
+        next: submit_refund
+
+      - id: submit_refund
+        type: action
+        action: action_create_travel_refund
+        next: show_refund
+
+      - id: show_refund
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.refund_results }}"
+        next: end
+
+      - id: end
+        type: end
+        next: [ ]
+
+  work_order_submit:
+    name: 工单提交
+    description: 帮用户提交客服工单（投诉、售后、咨询等），需要收集工单类型、问题描述，可选关联订单号，然后创建工单并返回工单编号。当用户询问"投诉""人工""工单""问题反馈"时使用。
+    steps:
+      - id: start
+        type: start
+        next: ask_work_order_type
+
+      - id: ask_work_order_type
+        type: collect
+        slot_name: work_order_type
+        response:
+          text: "请选择工单类型：after_sale（售后）、complaint（投诉）、refund（退款）、consult（咨询）。"
+        next: ask_work_order_order_no
+
+      - id: ask_work_order_order_no
+        type: collect
+        slot_name: work_order_order_no
+        response:
+          text: "请提供关联的订单号（没有可回复“无”）。"
+        next: ask_work_order_description
+
+      - id: ask_work_order_description
+        type: collect
+        slot_name: work_order_description
+        response:
+          text: "请描述你遇到的问题。"
+        next: submit_work_order
+
+      - id: submit_work_order
+        type: action
+        action: action_submit_work_order
+        next: show_work_order
+
+      - id: show_work_order
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.work_order_results }}"
         next: end
 
       - id: end

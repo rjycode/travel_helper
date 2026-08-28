@@ -10,6 +10,8 @@ from typing import Any
 from atguigu.domain.state import DialogueState
 from atguigu.task.action.base import Action, ActionResult
 from atguigu.task.action.customer.shared import (
+    create_travel_refund,
+    create_work_order,
     fetch_buses,
     fetch_city_area_id,
     fetch_flights,
@@ -291,3 +293,79 @@ class ActionLookupTravelOrder(Action):
             lines.append(f"取消原因：{order['cancelReason']}")
 
         return ActionResult(updated_slots={"order_results": chr(10).join(lines)})
+
+WORK_ORDER_TYPE_MAP = {
+    "after_sale": "售后",
+    "complaint": "投诉",
+    "refund": "退款",
+    "consult": "咨询",
+}
+WORK_ORDER_TYPE_NAMES = "、".join(f"{k}（{v}）" for k, v in WORK_ORDER_TYPE_MAP.items())
+
+
+class ActionCreateTravelRefund(Action):
+    """按订单号发起退款申请。"""
+
+    name = "action_create_travel_refund"
+
+    async def run(self, action_kwargs, state):
+        order_no = (state.active_task.slots.get("refund_order_no") or "").strip()
+        reason = (state.active_task.slots.get("refund_reason") or "").strip() or "行程变更"
+
+        result = await create_travel_refund(order_no, reason)
+        if result is None:
+            return ActionResult(updated_slots={
+                "refund_results": f"抱歉，退款申请提交失败，请确认订单号 {order_no} 是否正确、且订单可退款。",
+            })
+        lines = [
+            "退款申请已提交！",
+            f"· 申请单号：{result.get('refundRequestNo')}",
+            f"· 订单：{result.get('orderNo')}，申请金额 ¥{result.get('requestedAmount')}",
+            f"· 原因：{result.get('reason')}",
+            f"· 状态：{result.get('statusCode')}（待审核）",
+            "审核通过后将原路退回，请注意查收。",
+        ]
+        return ActionResult(updated_slots={"refund_results": "\n".join(lines)})
+
+
+class ActionSubmitWorkOrder(Action):
+    """提交客服工单（工单类型→关联订单→问题描述→创建工单）。"""
+
+    name = "action_submit_work_order"
+
+    async def run(self, action_kwargs, state):
+        ticket_type = (state.active_task.slots.get("work_order_type") or "").strip()
+        order_no = (state.active_task.slots.get("work_order_order_no") or "").strip() or None
+        description = (state.active_task.slots.get("work_order_description") or "").strip()
+
+        alias_map = {
+            "售后": "after_sale", "退换货": "after_sale", "after_sale": "after_sale",
+            "投诉": "complaint", "complaint": "complaint",
+            "退款": "refund", "refund": "refund",
+            "咨询": "consult", "咨询问题": "consult", "consult": "consult",
+        }
+        ticket_type_code = alias_map.get(ticket_type, ticket_type)
+        if ticket_type_code not in WORK_ORDER_TYPE_MAP:
+            return ActionResult(updated_slots={
+                "work_order_results": f"工单类型需为：{WORK_ORDER_TYPE_NAMES}，请重新选择。",
+            })
+        if not description:
+            return ActionResult(updated_slots={
+                "work_order_results": "请描述你遇到的问题，方便我们尽快处理。",
+            })
+
+        title = f"{WORK_ORDER_TYPE_MAP[ticket_type_code]}-{'订单' + order_no if order_no else '无订单'}"
+        result = await create_work_order(ticket_type_code, title, description, order_no)
+        if result is None:
+            return ActionResult(updated_slots={
+                "work_order_results": "抱歉，工单提交失败，请稍后重试。",
+            })
+        lines = [
+            "工单已提交！",
+            f"· 工单编号：{result.get('workOrderNo')}",
+            f"· 类型：{WORK_ORDER_TYPE_MAP.get(ticket_type_code, ticket_type_code)}",
+            f"· 问题：{result.get('description')}",
+            f"· 状态：{result.get('statusCode')}（待处理）",
+            "客服人员将尽快处理，请保持关注。",
+        ]
+        return ActionResult(updated_slots={"work_order_results": "\n".join(lines)})

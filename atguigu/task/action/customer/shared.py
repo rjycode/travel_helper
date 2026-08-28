@@ -215,3 +215,36 @@ async def fetch_travel_order(order_no: str) -> dict | None:
         return data if isinstance(data, dict) else None
     except Exception:
         return None
+
+
+async def create_travel_refund(order_no: str, reason: str) -> dict | None:
+    """按订单号发起退款申请（客服演示）。"""
+    if not order_no:
+        return None
+    try:
+        r = await http_client.http_client.post(
+            f"{_travel_base_url()}/api/v1/demo/refunds",
+            json={"orderNo": order_no, "reason": reason},
+        )
+        data = r.json()
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+async def create_work_order(ticket_type_code: str, title: str, description: str, order_no: str | None = None) -> dict | None:
+    """提交客服工单。"""
+    try:
+        r = await http_client.http_client.post(
+            f"{_travel_base_url()}/api/v1/demo/work-orders",
+            json={
+                "ticketTypeCode": ticket_type_code,
+                "title": title,
+                "description": description,
+                "orderNo": order_no,
+            },
+        )
+        data = r.json()
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
